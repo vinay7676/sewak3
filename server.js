@@ -1,4 +1,5 @@
 const express = require('express');
+const nodemailer = require('nodemailer');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
@@ -11,12 +12,23 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Use port 465 (SSL) instead of 587 (TLS) - works better on Render
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // Use SSL
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'Server is running' });
 });
 
-// Simple email endpoint using Resend
+// Email endpoint
 app.post('/send-email', async (req, res) => {
   const { firstName, lastName, email, contact, service, message } = req.body;
 
@@ -24,43 +36,36 @@ app.post('/send-email', async (req, res) => {
     return res.status(400).json({ error: 'All fields are required.' });
   }
 
-  try {
-    // Using fetch API (built-in, no package needed!)
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'onboarding@resend.dev', // Free domain provided by Resend
-        to: 'vinaydadwal980@gmail.com', // Changed to your verified email
-        reply_to: email, // Customer can reply to the person who filled the form
-        subject: `New Contact Request from ${firstName} ${lastName}`,
-        html: `
-          <h2>New Contact Request</h2>
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: 'Sewakmachines25@gmail.com',
+    replyTo: email, // Customer's email for easy reply
+    subject: `New Contact Request from ${firstName} ${lastName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #053B75;">New Contact Request</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px;">
           <p><strong>Name:</strong> ${firstName} ${lastName}</p>
           <p><strong>Email:</strong> ${email}</p>
           <p><strong>Contact:</strong> ${contact}</p>
           <p><strong>Service:</strong> ${service}</p>
-          <p><strong>Message:</strong> ${message}</p>
-          <hr>
-          <p><em>This email was sent to vinaydadwal980@gmail.com. Please forward to Sewakmachines25@gmail.com if needed.</em></p>
-        `
-      })
-    });
+          <p><strong>Message:</strong></p>
+          <p style="background-color: white; padding: 15px; border-radius: 3px;">${message}</p>
+        </div>
+      </div>
+    `,
+  };
 
-    if (response.ok) {
-      console.log('Email sent successfully!');
-      res.status(200).json({ message: 'Email sent successfully!' });
-    } else {
-      const error = await response.json();
-      console.error('Resend error:', error);
-      res.status(500).json({ error: 'Failed to send email.' });
-    }
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully to Sewakmachines25@gmail.com');
+    res.status(200).json({ message: 'Email sent successfully!' });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).json({ error: 'Failed to send email.' });
+    res.status(500).json({ 
+      error: 'Failed to send email. Please try again.',
+      details: error.message 
+    });
   }
 });
 
