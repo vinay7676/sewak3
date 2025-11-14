@@ -1,10 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
 const { Resend } = require("resend");
-
-dotenv.config();
-
+require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -24,7 +21,7 @@ app.post("/send-email", async (req, res) => {
   }
 
   try {
-    await resend.emails.send({
+    const response = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: "Sewakmachines25@gmail.com",
       subject: `New Contact Request from ${firstName} ${lastName}`,
@@ -37,6 +34,7 @@ app.post("/send-email", async (req, res) => {
       `
     });
 
+    console.log("Email sent:", response);  // Added for debugging
     res.status(200).json({ message: "Email sent successfully!" });
   } catch (error) {
     console.error("Error sending email:", error);
