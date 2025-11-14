@@ -34,7 +34,8 @@ app.post('/send-email', async (req, res) => {
       },
       body: JSON.stringify({
         from: 'onboarding@resend.dev', // Free domain provided by Resend
-        to: 'Sewakmachines25@gmail.com',
+        to: 'vinaydadwal980@gmail.com', // Changed to your verified email
+        reply_to: email, // Customer can reply to the person who filled the form
         subject: `New Contact Request from ${firstName} ${lastName}`,
         html: `
           <h2>New Contact Request</h2>
@@ -43,6 +44,8 @@ app.post('/send-email', async (req, res) => {
           <p><strong>Contact:</strong> ${contact}</p>
           <p><strong>Service:</strong> ${service}</p>
           <p><strong>Message:</strong> ${message}</p>
+          <hr>
+          <p><em>This email was sent to vinaydadwal980@gmail.com. Please forward to Sewakmachines25@gmail.com if needed.</em></p>
         `
       })
     });
